@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: nri-cni
+  name: nri-cni
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: nri-cni
+  template:
+    metadata:
+      labels:
+        app: nri-cni
+    spec:
+      hostNetwork: true
+      containers:
+        - name: nri-cni
+          args:
+            - "-idx=02"
+          env:
+            - name: CNI_PATH
+              value: /opt/cni/bin
+          image: nri-cni-plugin
+          imagePullPolicy: Never # for testing
+          # securityContext:
+          #   allowPrivilegeEscalation: false
+          #
+          #   capabilities:
+          #     drop: ["ALL"]
+          securityContext:
+            # capabilities:
+            #   add:
+            #     - NET_ADMIN
+            #     - NET_RAW
+            privileged: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: cnipath
+              mountPath: /opt/cni/bin
+            - name: cniconf
+              mountPath: /etc/cni/net.d
+            - name: netns
+              mountPath: /var/run/netns
+            - name: resmgrnrisock
+              mountPath: /var/run/nri.sock
+            - name: flannel
+              mountPath: /run/flannel
+      volumes:
+        - name: cnipath
+          hostPath:
+            path: /opt/cni/bin
+            type: Directory
+        - name: cniconf
+          hostPath:
+            path: /etc/cni/net.d
+            type: Directory
+        - name: netns
+          hostPath:
+            path: /var/run/netns
+            type: Directory
+        - name: resmgrnrisock
+          hostPath:
+            path: /var/run/nri.sock
+            type: Socket
+        - name: flannel
+          hostPath:
+            path: /run/flannel
+            type: Directory
