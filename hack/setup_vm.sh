@@ -86,14 +86,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+VM_NAME="${NAME_PREFIX}-node-${NAME_SUFFIX}"
 
-VM_NAME=$NAME_PREFIX+"node"+$NAME_SUFFIX
-
-if multipass ls | grep --quiet "${VM_NAME}"; then
+#VM_STATUS=$(multipass info ${VM_NAME} --format json|jq \'.info."$VM_NAME".state\')
+echo kkkkkk "    $VM_NAME"
+if multipass info "${VM_NAME}"; then
   echo "the VM ${VM_NAME} exists. please double check with multipass ls."
-  exit 1
+else
+  echo "0 create a vm:  ${VM_NAME}"
+  echo "multipass launch -c ${CORE} -m ${MEMORY}G -d ${DISK}G -n ${VM_NAME} \
+        --cloud-init $(pwd)/cloud-init.yaml --timeout 1200 ${OS_VERSION}"
+
+  multipass launch -c "${CORE}" -m "${MEMORY}G" -d "${DISK}G" -n "${VM_NAME}" \
+    --cloud-init "$(pwd)/cloud-init.yaml" --timeout 1200 "${OS_VERSION}"
 fi
 
-echo "0 create a vm:  ${VM_NAME}"
-multipass launch -c "${CORE}" -m "${MEMORY}G" -d "${DISK}G" -n "${VM_NAME}" \
-  --cloud-init "$(pwd)/cloud-init.yaml" --timeout 1200 "${OS_VERSION}"
+multipass exec $VM_NAME -- mkdir -p /home/ubuntu/hack
+multipass mount ./ ${VM_NAME}:/home/ubuntu/hack

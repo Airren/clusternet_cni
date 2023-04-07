@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/containernetworking/cni/libcni"
 )
@@ -23,9 +22,9 @@ const (
 
 	DefaultNetDir = "/etc/cni/net.d"
 
-	CmdAdd   = "add"
-	CmdCheck = "check"
-	CmdDel   = "del"
+	CmdAdd   = "ADD"
+	CmdCheck = "CHECK"
+	CmdDel   = "DEL"
 )
 
 func parseArgs(args string) ([][2]string, error) {
@@ -44,29 +43,42 @@ func parseArgs(args string) ([][2]string, error) {
 	return result, nil
 }
 
-func AddNetworkInterface(ns string) error {
+type CNIPlugin struct {
+	Name string
+}
 
-	cniOpt := "add"
-	cniName := "cbr1"
-	cniNamespace := ns
-	//if len(os.Args) < 4 {
-	//	usage()
-	//}
+var DefaultCNIPlugin CNIPlugin
 
+func (c *CNIPlugin) AddNetworkInterface(nsPath string) error {
+	return c.NetworkInterfaceOpt(nsPath, CmdAdd)
+}
+func (c *CNIPlugin) DelNetworkInterface(nsPath string) error {
+	return c.NetworkInterfaceOpt(nsPath, CmdDel)
+
+}
+func (c *CNIPlugin) CheckNetworkInterface(nsPath string) error {
+	return c.NetworkInterfaceOpt(nsPath, CmdCheck)
+}
+
+func (c *CNIPlugin) NetworkInterfaceOpt(nsPath string, cniOpt string) error {
+	// get default net conf dir
 	netdir := os.Getenv(EnvNetDir)
 	if netdir == "" {
 		netdir = DefaultNetDir
 	}
-	netconf, err := libcni.LoadConfList(netdir, cniName)
+
+	netconf, err := libcni.LoadConfList(netdir, c.Name)
 	if err != nil {
-		exit(err)
+		fmt.Printf("get cni configuration failed: %s", err)
+		return err
 	}
 
+	// what's cap argus
 	var capabilityArgs map[string]interface{}
 	capabilityArgsValue := os.Getenv(EnvCapabilityArgs)
 	if len(capabilityArgsValue) > 0 {
 		if err = json.Unmarshal([]byte(capabilityArgsValue), &capabilityArgs); err != nil {
-			exit(err)
+			return err
 		}
 	}
 
@@ -75,28 +87,24 @@ func AddNetworkInterface(ns string) error {
 	if len(args) > 0 {
 		cniArgs, err = parseArgs(args)
 		if err != nil {
-			exit(err)
+			return err
 		}
 	}
 
 	ifName, ok := os.LookupEnv(EnvCNIIfname)
 	if !ok {
-		//ifName = "eth1"
-		ifName = fmt.Sprintf("eth%v", time.Now().Second())
+		ifName = fmt.Sprintf("eth99")
 	}
 
-	netns := cniNamespace
-	netns, err = filepath.Abs(netns)
+	netns, err := filepath.Abs(nsPath)
 	if err != nil {
-		exit(err)
+		return err
 	}
 
-	// Generate the containerid by hashing the netns path
+	// Generate the containerd by hashing the netns path
 	s := sha512.Sum512([]byte(netns))
 	containerID := fmt.Sprintf("cnitool-%x", s[:10])
-
 	cninet := libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
-
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,
 		NetNS:          netns,
@@ -104,28 +112,19 @@ func AddNetworkInterface(ns string) error {
 		Args:           cniArgs,
 		CapabilityArgs: capabilityArgs,
 	}
-
 	switch cniOpt {
 	case CmdAdd:
 		result, err := cninet.AddNetworkList(context.TODO(), netconf, rt)
 		if result != nil {
 			_ = result.Print()
 		}
-
-		exit(err)
+		return err
 	case CmdCheck:
-		err := cninet.CheckNetworkList(context.TODO(), netconf, rt)
-		exit(err)
+		err = cninet.CheckNetworkList(context.TODO(), netconf, rt)
+		return err
 	case CmdDel:
-		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
+		err = cninet.DelNetworkList(context.TODO(), netconf, rt)
+		return err
 	}
-	return nil
-}
-
-func exit(err error) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, ">>>>>>>>>>>>> there is an err: %s\n", err)
-		os.Exit(1)
-	}
-	//os.Exit(0)
+	return err
 }

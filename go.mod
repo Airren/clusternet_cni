@@ -6,7 +6,7 @@ require (
 	github.com/containerd/nri v0.3.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/sirupsen/logrus v1.9.0
-	sigs.k8s.io/yaml v1.3.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -20,6 +20,5 @@ require (
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/cri-api v0.25.3 // indirect
 )
