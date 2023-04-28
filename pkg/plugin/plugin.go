@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -85,17 +84,17 @@ func (p *CNIPlugin) RunPodSandbox(pod *api.PodSandbox) error {
 func (p *CNIPlugin) StopPodSandbox(pod *api.PodSandbox) error {
 	//dump("StopPodSandbox", "pod", pod)
 	logrus.Debugf("[StopPodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
-	return nil
-}
-
-func (p *CNIPlugin) RemovePodSandbox(pod *api.PodSandbox) error {
-	logrus.Debugf("[RemovePodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
 	nsPath, err := GetNSPathFromPod(pod)
 	if err != nil {
 		return err
 	}
 	logrus.Infof("the namespace path is: %s ", nsPath)
 	return cni.DefaultCNIPlugin.DelNetworkInterface(nsPath)
+}
+
+func (p *CNIPlugin) RemovePodSandbox(pod *api.PodSandbox) error {
+	logrus.Debugf("[RemovePodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
+	return nil
 }
 
 func (p *CNIPlugin) OnClose() {
@@ -113,38 +112,4 @@ func GetNSPathFromPod(pod *api.PodSandbox) (nsPath string, err error) {
 		return "", errors.New("ns not exist")
 	}
 	return
-}
-
-// Dump one or more objects, with an optional global prefix and per-object tags.
-func dump(args ...interface{}) {
-	var (
-		prefix string
-		idx    int
-	)
-
-	if len(args)&0x1 == 1 {
-		prefix = args[0].(string)
-		idx++
-	}
-
-	for ; idx < len(args)-1; idx += 2 {
-		tag, obj := args[idx], args[idx+1]
-		msg, err := yaml.Marshal(obj)
-		if err != nil {
-			logrus.Infof("%s: %s: failed to dump object: %v", prefix, tag, err)
-			continue
-		}
-
-		if prefix != "" {
-			logrus.Infof("%s: %s:", prefix, tag)
-			for _, line := range strings.Split(strings.TrimSpace(string(msg)), "\n") {
-				logrus.Infof("%s:    %s", prefix, line)
-			}
-		} else {
-			logrus.Infof("%s:", tag)
-			for _, line := range strings.Split(strings.TrimSpace(string(msg)), "\n") {
-				logrus.Infof("  %s", line)
-			}
-		}
-	}
 }
