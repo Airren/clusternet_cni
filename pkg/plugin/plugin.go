@@ -86,6 +86,8 @@ func (p *CNIPlugin) StopPodSandbox(pod *api.PodSandbox) error {
 	logrus.Debugf("[StopPodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
 	nsPath, err := GetNSPathFromPod(pod)
 	if err != nil {
+		logrus.Errorf(" get ns path failed: %s \n ", err)
+		logrus.Infof("pod: %v", pod)
 		return err
 	}
 	logrus.Infof("the namespace path is: %s ", nsPath)
