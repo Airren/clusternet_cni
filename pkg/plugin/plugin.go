@@ -73,6 +73,7 @@ func (p *CNIPlugin) Shutdown() {
 }
 
 func (p *CNIPlugin) RunPodSandbox(pod *api.PodSandbox) error {
+	logrus.Debugf("[RunPodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
 	nsPath, err := GetNSPathFromPod(pod)
 	if err != nil {
 		return err
@@ -83,10 +84,12 @@ func (p *CNIPlugin) RunPodSandbox(pod *api.PodSandbox) error {
 
 func (p *CNIPlugin) StopPodSandbox(pod *api.PodSandbox) error {
 	//dump("StopPodSandbox", "pod", pod)
+	logrus.Debugf("[StopPodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
 	return nil
 }
 
 func (p *CNIPlugin) RemovePodSandbox(pod *api.PodSandbox) error {
+	logrus.Debugf("[RemovePodSandbox]: the pod is %s--%s", pod.Namespace, pod.Name)
 	nsPath, err := GetNSPathFromPod(pod)
 	if err != nil {
 		return err

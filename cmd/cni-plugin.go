@@ -41,6 +41,7 @@ func main() {
 	)
 
 	logrus.StandardLogger()
+	logrus.SetLevel(logrus.TraceLevel)
 	logrus.SetReportCaller(true)
 	logrus.SetFormatter(&logrus.TextFormatter{
 		PadLevelText:  true,
