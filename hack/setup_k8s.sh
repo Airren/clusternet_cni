@@ -122,18 +122,18 @@ function containerd_install() {
 
   RUNC_VERSION=v1.1.4
   if [ ! -e runc.amd64 ]; then
-    wget https://github.com/opencontainers/runc/releases/download/$RUNC_VERSION/runc.amd64
+    wget -c  https://github.com/opencontainers/runc/releases/download/$RUNC_VERSION/runc.amd64
   fi
   sudo install -m 755 runc.amd64 /usr/local/sbin/runc
 
   CONTAINERD_VERSION=1.7.0
   if [ ! -e containerd-$CONTAINERD_VERSION-linux-amd64.tar.gz ]; then
-    wget https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/containerd-$CONTAINERD_VERSION-linux-amd64.tar.gz
+    wget -c  https://github.com/containerd/containerd/releases/download/v$CONTAINERD_VERSION/containerd-$CONTAINERD_VERSION-linux-amd64.tar.gz
   fi
   sudo tar Czxvf /usr/local containerd-$CONTAINERD_VERSION-linux-amd64.tar.gz
 
   if [ ! -e containerd.service ]; then
-    wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    wget -c https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
   fi
 
   sudo mv containerd.service /usr/lib/systemd/system/
@@ -147,7 +147,7 @@ function containerd_install() {
   fi
 
   sudo mkdir -p /etc/containerd/
-  containerd config default | sudo tee /etc/containerd/config.toml
+  containerd config default | sudo tee /etc/containerd/config.toml > /dev/null 2>&1
   sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
   sudo sed -i 's/disable \= true/disable \= false/g' /etc/containerd/config.toml
 
