@@ -62,7 +62,6 @@ spec:
             - -f
             - /etc/dedicated-cni/cni-conf.json
             - /etc/cni/net.d/99-dedicated.conflist
-          env:
           volumeMounts:
             - mountPath: /etc/cni/net.d
               name: cniconf
