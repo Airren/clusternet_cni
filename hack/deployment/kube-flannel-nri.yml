@@ -139,6 +139,9 @@ spec:
 #        - --kube-subnet-mgr
         - --subnet-file=/run/flannel/clusternet.env
         - --etcd-prefix=/clusternet/network
+        - --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key
+        - --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt
+        - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
         command:
         - /opt/bin/flanneld
         env:
@@ -169,6 +172,8 @@ spec:
           name: run
         - mountPath: /etc/kube-flannel/
           name: flannel-cfg
+        - mountPath: /etc/kubernetes/pki/etcd/
+          name: etcd
         - mountPath: /run/xtables.lock
           name: xtables-lock
       hostNetwork: true
@@ -199,6 +204,9 @@ spec:
       - hostPath:
           path: /etc/cni/net.d
         name: cni
+      - hostPath:
+          path: /etc/kubernetes/pki/etcd/
+        name: etcd
       - configMap:
           name: kube-flannel-cfg-dedicated
         name: flannel-cfg
