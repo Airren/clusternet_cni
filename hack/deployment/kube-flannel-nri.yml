@@ -1,68 +1,68 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    k8s-app: flannel
-    pod-security.kubernetes.io/enforce: privileged
-  name: kube-flannel
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    k8s-app: flannel
-  name: flannel
-  namespace: kube-flannel
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    k8s-app: flannel
-  name: flannel
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/status
-  verbs:
-  - patch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - clustercidrs
-  verbs:
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    k8s-app: flannel
-  name: flannel
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: flannel
-subjects:
-- kind: ServiceAccount
-  name: flannel
-  namespace: kube-flannel
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#  labels:
+#    k8s-app: flannel
+#    pod-security.kubernetes.io/enforce: privileged
+#  name: kube-flannel
+#---
+#apiVersion: v1
+#kind: ServiceAccount
+#metadata:
+#  labels:
+#    k8s-app: flannel
+#  name: flannel
+#  namespace: kube-flannel
+#---
+#apiVersion: rbac.authorization.k8s.io/v1
+#kind: ClusterRole
+#metadata:
+#  labels:
+#    k8s-app: flannel
+#  name: flannel
+#rules:
+#- apiGroups:
+#  - ""
+#  resources:
+#  - pods
+#  verbs:
+#  - get
+#- apiGroups:
+#  - ""
+#  resources:
+#  - nodes
+#  verbs:
+#  - get
+#  - list
+#  - watch
+#- apiGroups:
+#  - ""
+#  resources:
+#  - nodes/status
+#  verbs:
+#  - patch
+#- apiGroups:
+#  - networking.k8s.io
+#  resources:
+#  - clustercidrs
+#  verbs:
+#  - list
+#  - watch
+#---
+#apiVersion: rbac.authorization.k8s.io/v1
+#kind: ClusterRoleBinding
+#metadata:
+#  labels:
+#    k8s-app: flannel
+#  name: flannel
+#roleRef:
+#  apiGroup: rbac.authorization.k8s.io
+#  kind: ClusterRole
+#  name: flannel
+#subjects:
+#- kind: ServiceAccount
+#  name: flannel
+#  namespace: kube-flannel
 ---
 apiVersion: v1
 data:
@@ -90,7 +90,8 @@ data:
     {
       "Network": "10.241.0.0/16",
       "Backend": {
-        "Type": "vxlan"
+        "Type": "vxlan",
+        "VNI": 2
       }
     }
 kind: ConfigMap
@@ -99,7 +100,7 @@ metadata:
     app: flannel
     k8s-app: flannel
     tier: node
-  name: kube-flannel-cfg-1
+  name: kube-flannel-cfg-dedicated
   namespace: kube-flannel
 ---
 apiVersion: apps/v1
@@ -109,18 +110,18 @@ metadata:
     app: flannel
     k8s-app: flannel
     tier: node
-  name: kube-flannel-ds
+  name: kube-flannel-ds-dedicated
   namespace: kube-flannel
 spec:
   selector:
     matchLabels:
-      app: flannel
-      k8s-app: flannel
+      app: flannel-dedicated
+      k8s-app: flannel-dedicated
   template:
     metadata:
       labels:
-        app: flannel
-        k8s-app: flannel
+        app: flannel-dedicated
+        k8s-app: flannel-dedicated
         tier: node
     spec:
       affinity:
@@ -135,7 +136,7 @@ spec:
       containers:
       - args:
         - --ip-masq
-        - --kube-subnet-mgr
+#        - --kube-subnet-mgr
         - --subnet-file=/run/flannel/clusternet.env
         - --etcd-prefix=/clusternet/network
         command:
@@ -199,7 +200,7 @@ spec:
           path: /etc/cni/net.d
         name: cni
       - configMap:
-          name: kube-flannel-cfg-1
+          name: kube-flannel-cfg-dedicated
         name: flannel-cfg
       - hostPath:
           path: /run/xtables.lock
