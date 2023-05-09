@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export key=$(sudo cat /etc/kubernetes/pki/etcd/server.crt)
-export cert=$(cat /etc/kubernetes/pki/etcd/server.key)
+export key=$(sudo cat /etc/kubernetes/pki/etcd/server.key)
+export cert=$(cat /etc/kubernetes/pki/etcd/server.crt)
 export ca=$(cat /etc/kubernetes/pki/etcd/ca.crt)
 
 yq -i '.data."server.key" =  strenv(key)' /home/ubuntu/hack/deployment/flannel-etcd-cert.yaml
