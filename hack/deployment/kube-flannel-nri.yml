@@ -88,7 +88,7 @@ data:
     }
   net-conf.json: |
     {
-      "Network": "10.241.0.0/16",
+      "Network": "10.240.0.0/16",
       "Backend": {
         "Type": "vxlan",
         "VNI": 2
@@ -136,9 +136,9 @@ spec:
       containers:
       - args:
         - --ip-masq
-#        - --kube-subnet-mgr
         - --subnet-file=/run/flannel/clusternet.env
         - --etcd-prefix=/clusternet/network
+        - --etcd-endpoints=https://kube-etcd.kube-system:2379
         - --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key
         - --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt
         - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
@@ -173,7 +173,7 @@ spec:
         - mountPath: /etc/kube-flannel/
           name: flannel-cfg
         - mountPath: /etc/kubernetes/pki/etcd/
-          name: etcd
+          name: flannel-cert
         - mountPath: /run/xtables.lock
           name: xtables-lock
       hostNetwork: true
@@ -189,6 +189,22 @@ spec:
         volumeMounts:
         - mountPath: /opt/cni/bin
           name: cni-plugin
+      - args:
+        - --endpoints=https://kube-etcd.kube-system:2379
+        - --cacert=/etc/kubernetes/pki/etcd/ca.crt
+        - --cert=/etc/kubernetes/pki/etcd/server.crt
+        - --key=/etc/kubernetes/pki/etcd/server.key
+        - put
+        - $(cat /etc/kube-flannel/net-conf.json)
+        command:
+        - etcdctl
+        image: docker.io/bitnami/etcd:latest
+        name: set-cluster-cidr
+        volumeMounts:
+        - mountPath: /etc/kube-flannel/
+          name: flannel-cfg
+        - mountPath: /etc/kubernetes/pki/etcd/
+          name: flannel-cert
       priorityClassName: system-node-critical
       serviceAccountName: flannel
       tolerations:
@@ -204,12 +220,12 @@ spec:
       - hostPath:
           path: /etc/cni/net.d
         name: cni
-      - hostPath:
-          path: /etc/kubernetes/pki/etcd/
-        name: etcd
       - configMap:
           name: kube-flannel-cfg-dedicated
         name: flannel-cfg
+      - configMap:
+          name: kube-flannel-etcd-cert-dedicated
+        name: flannel-cert
       - hostPath:
           path: /run/xtables.lock
           type: FileOrCreate

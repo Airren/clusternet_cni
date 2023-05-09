@@ -184,7 +184,7 @@ spec:
       - args:
         - -f
         - /etc/kube-flannel/cni-conf.json
-        - /etc/cni/net.d/99-flannel.conflist
+        - /etc/cni/net.d/10-flannel.conflist
         command:
         - cp
         image: docker.io/flannel/flannel:v0.21.4
