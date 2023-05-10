@@ -12,4 +12,5 @@ spec:
       port: 2379
       targetPort: 2379
   type: ClusterIP
+  clusterIP: None
 

@@ -138,7 +138,7 @@ spec:
         - --ip-masq
         - --subnet-file=/run/flannel/clusternet.env
         - --etcd-prefix=/clusternet/network
-        - --etcd-endpoints=https://kube-etcd.kube-system:2379
+        - --etcd-endpoints=https://$(cat /run/flannel/etcd.ip):2379
         - --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key
         - --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt
         - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
@@ -178,6 +178,12 @@ spec:
           name: xtables-lock
       hostNetwork: true
       initContainers:
+      - name: busybox
+        command: [ "/bin/ash", "-c", "nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ' | tee /run/flannel/etcd.ip" ]
+        image: busybox
+        volumeMounts:
+          - mountPath: /run/flannel
+            name: run
       - args:
         - -f
         - /flannel
@@ -190,7 +196,7 @@ spec:
         - mountPath: /opt/cni/bin
           name: cni-plugin
       - args:
-        - --endpoints=https://kube-etcd.kube-system:2379
+        - --endpoints=https://$(cat /run/flannel/etcd.ip):2379
         - --cacert=/etc/kubernetes/pki/etcd/ca.crt
         - --cert=/etc/kubernetes/pki/etcd/server.crt
         - --key=/etc/kubernetes/pki/etcd/server.key
@@ -205,6 +211,8 @@ spec:
           name: flannel-cfg
         - mountPath: /etc/kubernetes/pki/etcd/
           name: flannel-cert
+        - mountPath: /run/flannel
+          name: run
       priorityClassName: system-node-critical
       serviceAccountName: flannel
       tolerations:
