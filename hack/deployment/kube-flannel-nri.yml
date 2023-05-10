@@ -138,7 +138,13 @@ spec:
         command:
         - /bin/bash
         - -c
-        - " /opt/bin/flanneld --ip-masq --subnet-file=/run/flannel/clusternet.env --etcd-prefix=/clusternet/network --etcd-endpoints=https://$(cat /run/flannel/etcd.ip):2379 --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt"
+        - " /opt/bin/flanneld --ip-masq 
+        --subnet-file=/run/flannel/clusternet/subnet.env 
+        --etcd-prefix=/clusternet/network 
+        --etcd-endpoints=https://$(cat /run/flannel/clusternet/etcd.ip):2379 
+        --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key 
+        --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt 
+        --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt"
         env:
         - name: POD_NAME
           valueFrom:
@@ -163,7 +169,7 @@ spec:
             - NET_RAW
           privileged: false
         volumeMounts:
-        - mountPath: /run/flannel
+        - mountPath: /run/flannel/clusternet
           name: run
         - mountPath: /etc/kube-flannel/
           name: flannel-cfg
@@ -174,10 +180,10 @@ spec:
       hostNetwork: true
       initContainers:
       - name: busybox
-        command: [ "/bin/sh", "-c", "cat /etc/kubernetes/pki/etcd/resolv.conf | tee /etc/resolv.conf ;ip= ;while [ -z $ip ];do ip=$(nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ');done;echo $ip |tee /run/flannel/etcd.ip"]
+        command: [ "/bin/sh", "-c", "cat /etc/kubernetes/pki/etcd/resolv.conf | tee /etc/resolv.conf ;ip= ;while [ -z $ip ];do ip=$(nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ');done;echo $ip |tee /run/flannel/clusternet/etcd.ip"]
         image: busybox
         volumeMounts:
-          - mountPath: /run/flannel
+          - mountPath: /run/flannel/clusternet
             name: run
           - mountPath: /etc/kubernetes/pki/etcd/
             name: flannel-cert
@@ -192,7 +198,7 @@ spec:
         volumeMounts:
         - mountPath: /opt/cni/bin
           name: cni-plugin
-      - command: [ "/bin/bash","-c","cat /etc/kube-flannel/net-conf.json | etcdctl --endpoints=https://$(cat /run/flannel/etcd.ip):2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key put /clusternet/network/config "]
+      - command: [ "/bin/bash","-c","cat /etc/kube-flannel/net-conf.json | etcdctl --endpoints=https://$(cat /run/clusternet/flannel/etcd.ip):2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key put /clusternet/network/config "]
         image: docker.io/bitnami/etcd:latest
         name: set-cluster-cidr
         volumeMounts:
@@ -200,7 +206,7 @@ spec:
           name: flannel-cfg
         - mountPath: /etc/kubernetes/pki/etcd/
           name: flannel-cert
-        - mountPath: /run/flannel
+        - mountPath: /run/flannel/clusternet
           name: run
       priorityClassName: system-node-critical
       serviceAccountName: flannel
@@ -209,7 +215,7 @@ spec:
         operator: Exists
       volumes:
       - hostPath:
-          path: /run/flannel
+          path: /run/flannel/clusternet
         name: run
       - hostPath:
           path: /opt/cni/bin
