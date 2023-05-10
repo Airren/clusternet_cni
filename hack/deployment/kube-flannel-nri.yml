@@ -179,7 +179,7 @@ spec:
       hostNetwork: true
       initContainers:
       - name: busybox
-        command: [ "/bin/sh", "-c", "mv /etc/kubernetes/pki/etcd/resolv.conf /etc && nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ' | tee /run/flannel/etcd.ip" ]
+        command: [ "/bin/sh", "-c", "cat /etc/kubernetes/pki/etcd/resolv.conf | tee /etc/resolv.conf  && nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ' | tee /run/flannel/etcd.ip" ]
         image: busybox
         volumeMounts:
           - mountPath: /run/flannel
@@ -203,6 +203,7 @@ spec:
         - --cert=/etc/kubernetes/pki/etcd/server.crt
         - --key=/etc/kubernetes/pki/etcd/server.key
         - put
+        - /clusternet/network/config
         - $(cat /etc/kube-flannel/net-conf.json)
         command:
         - etcdctl
