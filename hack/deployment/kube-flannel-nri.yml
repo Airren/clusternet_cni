@@ -135,15 +135,10 @@ spec:
                 - linux
       containers:
       - args:
-        - --ip-masq
-        - --subnet-file=/run/flannel/clusternet.env
-        - --etcd-prefix=/clusternet/network
-        - --etcd-endpoints=https://$(cat /run/flannel/etcd.ip):2379
-        - --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key
-        - --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt
-        - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
         command:
-        - /opt/bin/flanneld
+        - /bin/bash
+        - -c
+        - " /opt/bin/flanneld --ip-masq --subnet-file=/run/flannel/clusternet.env --etcd-prefix=/clusternet/network --etcd-endpoints=https://$(cat /run/flannel/etcd.ip):2379 --etcd-keyfile=/etc/kubernetes/pki/etcd/server.key --etcd-certfile=/etc/kubernetes/pki/etcd/server.crt --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt"
         env:
         - name: POD_NAME
           valueFrom:
@@ -179,7 +174,7 @@ spec:
       hostNetwork: true
       initContainers:
       - name: busybox
-        command: [ "/bin/sh", "-c", "cat /etc/kubernetes/pki/etcd/resolv.conf | tee /etc/resolv.conf  && nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ' | tee /run/flannel/etcd.ip" ]
+        command: [ "/bin/sh", "-c", "cat /etc/kubernetes/pki/etcd/resolv.conf | tee /etc/resolv.conf ;ip= ;while [ -z $ip ];do ip=$(nslookup kube-etcd.kube-system.svc.cluster.local|awk -F': '  'NR==6 { print $2 } ');done;echo $ip |tee /run/flannel/etcd.ip"]
         image: busybox
         volumeMounts:
           - mountPath: /run/flannel
@@ -197,16 +192,7 @@ spec:
         volumeMounts:
         - mountPath: /opt/cni/bin
           name: cni-plugin
-      - args:
-        - --endpoints=https://$(cat /run/flannel/etcd.ip):2379
-        - --cacert=/etc/kubernetes/pki/etcd/ca.crt
-        - --cert=/etc/kubernetes/pki/etcd/server.crt
-        - --key=/etc/kubernetes/pki/etcd/server.key
-        - put
-        - /clusternet/network/config
-        - $(cat /etc/kube-flannel/net-conf.json)
-        command:
-        - etcdctl
+      - command: [ "/bin/bash","-c","cat /etc/kube-flannel/net-conf.json | etcdctl --endpoints=https://$(cat /run/flannel/etcd.ip):2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key put /clusternet/network/config "]
         image: docker.io/bitnami/etcd:latest
         name: set-cluster-cidr
         volumeMounts:
