@@ -6,6 +6,9 @@ data:
     ""
   ca.crt: |
     ""
+  resolv.conf: |
+    search default.svc.cluster.local svc.cluster.local cluster.local 
+    nameserver 10.96.0.10
 kind: ConfigMap
 metadata:
   labels:
