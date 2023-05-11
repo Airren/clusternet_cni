@@ -17,6 +17,8 @@ data:
         {
           "type": "flannel",
           "delegate": {
+            "type": "bridge",
+            "bridge": "dedicated.0",
             "hairpinMode": true,
             "isDefaultGateway": true
           }
@@ -127,7 +129,7 @@ spec:
           name: dedicated-cni-cfg
         - name: flannel
           hostPath:
-            path: /run/flannel
+            path: /run/flannel/clusternet
             type: DirectoryOrCreate
         - hostPath:
             path: /run/xtables.lock
